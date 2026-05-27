@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Strategy Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js" defer></script>
+  <script src="./config.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <div class="noise"></div>
+
+  <main class="app-shell">
+    <aside class="panel controls rail">
+      <div>
+        <p class="eyebrow">Enterprise Trading Console</p>
+        <h1>Stock Strategy Lab</h1>
+        <p class="subtitle">Market comparison, strategy analytics, and portfolio simulation.</p>
+      </div>
+
+      <form id="controls-form">
+        <label>
+          Tickers
+          <input id="tickers" type="text" value="AAPL,MSFT,NVDA" placeholder="AAPL,MSFT,NVDA" />
+        </label>
+        <div class="preset-strip" aria-label="Ticker presets">
+          <button class="btn-ghost preset-btn" type="button" data-preset="AAPL,MSFT,NVDA">Mega Tech</button>
+          <button class="btn-ghost preset-btn" type="button" data-preset="SPY,QQQ,IWM">US ETFs</button>
+          <button class="btn-ghost preset-btn" type="button" data-preset="JPM,GS,BAC">Banks</button>
+          <button class="btn-ghost preset-btn" type="button" data-preset="XOM,CVX,SHEL">Energy</button>
+        </div>
+
+        <div class="inline-grid basic-grid">
+          <label>
+            Time Range
+            <select id="range">
+              <option value="3M">3 Months</option>
+              <option value="6M">6 Months</option>
+              <option value="1Y" selected>1 Year</option>
+              <option value="2Y">2 Years</option>
+              <option value="5Y">5 Years</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Run Comparison</button>
+          <button
+            id="advancedToggle"
+            class="btn-ghost"
+            type="button"
+            aria-expanded="false"
+            aria-controls="advancedPanel"
+          >
+            Show Advanced Options
+          </button>
+        </div>
+
+        <section id="advancedPanel" class="advanced-panel" hidden>
+          <div class="advanced-topbar">
+            <p class="advanced-label">Core Settings</p>
+            <button id="advancedResetBtn" class="btn-ghost btn-compact" type="button">Reset Advanced</button>
+          </div>
+
+          <div class="advanced-group">
+            <div class="inline-grid">
+              <label>
+                Data Provider
+                <select id="providerMode" disabled>
+                  <option value="twelvedata" selected>Twelve Data (Only)</option>
+                </select>
+                <small class="field-hint">Provider switching disabled in this build.</small>
+              </label>
+
+              <label>
+                Benchmark
+                <input id="benchmark" type="text" value="SPY" placeholder="SPY" />
+                <small class="field-hint">Accepts aliases like S&amp;P 500, ^GSPC, SPX.</small>
+              </label>
+
+              <label>
+                Weighting
+                <select id="weightingMode">
+                  <option value="equal" selected>Equal</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+            </div>
+
+            <label id="weightsWrap">
+              Custom Weights
+              <input id="weights" type="text" placeholder="0.4,0.3,0.3" />
+              <small class="field-hint">Match ticker order, e.g. 0.4,0.3,0.3</small>
+            </label>
+          </div>
+
+          <details class="advanced-accordion">
+            <summary>Execution Controls</summary>
+            <div class="advanced-group">
+              <div class="inline-grid">
+                <label>
+                  Rebalance
+                  <select id="rebalanceMode">
+                    <option value="none" selected>None</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </label>
+
+                <label>
+                  Quote Refresh
+                  <select id="quoteRefreshMs">
+                    <option value="30000" selected>30 sec</option>
+                    <option value="15000">15 sec</option>
+                    <option value="60000">60 sec</option>
+                    <option value="120000">120 sec</option>
+                    <option value="0">Off</option>
+                  </select>
+                </label>
+
+                <label>
+                  Min Overlap Days
+                  <input id="minOverlapDays" type="number" value="40" min="20" max="260" />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="advanced-accordion">
+            <summary>Strategy Model Tuning</summary>
+            <div class="advanced-group">
+              <div class="strategy-grid">
+                <label>
+                  SMA Fast
+                  <input id="smaFast" type="number" value="20" min="5" max="100" />
+                </label>
+                <label>
+                  SMA Slow
+                  <input id="smaSlow" type="number" value="50" min="10" max="250" />
+                </label>
+                <label>
+                  RSI Period
+                  <input id="rsiPeriod" type="number" value="14" min="2" max="50" />
+                </label>
+                <label>
+                  RSI Buy Below
+                  <input id="rsiBuy" type="number" value="30" min="5" max="50" />
+                </label>
+                <label>
+                  RSI Sell Above
+                  <input id="rsiSell" type="number" value="55" min="50" max="95" />
+                </label>
+                <label>
+                  Trading Cost (bps)
+                  <input id="tradeCostBps" type="number" value="5" min="0" max="100" step="0.5" />
+                </label>
+                <label>
+                  Slippage (bps)
+                  <input id="slippageBps" type="number" value="3" min="0" max="100" step="0.5" />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="advanced-accordion">
+            <summary>Portfolio A/B Mix Builder</summary>
+            <div class="advanced-group">
+              <div class="inline-grid">
+                <label class="check-label">
+                  <input id="mixCompareEnabled" type="checkbox" />
+                  Enable Portfolio Mix Comparison
+                </label>
+                <label>
+                  Amount Mode
+                  <select id="mixAmountMode">
+                    <option value="percent" selected>Percent Weights</option>
+                    <option value="dollars">Dollar Amounts</option>
+                    <option value="shares">Share Counts</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                Portfolio A
+                <textarea id="mixA" rows="3" placeholder="AAPL:40, MSFT:30, NVDA:30"></textarea>
+                <small class="field-hint">Format: `TICKER:value`, comma/newline separated.</small>
+              </label>
+              <label>
+                Portfolio B
+                <textarea id="mixB" rows="3" placeholder="SPY:70, QQQ:30"></textarea>
+                <small class="field-hint">Use percent, dollars, or shares based on Amount Mode.</small>
+              </label>
+            </div>
+          </details>
+        </section>
+      </form>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar panel">
+        <div>
+          <h2>Market & Strategy Intelligence</h2>
+          <p class="subtitle">Realtime quote board, benchmark-relative performance, and strategy diagnostics.</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="copyLinkBtn" class="btn-ghost" type="button">Copy Share Link</button>
+          <button id="themeToggle" class="btn-ghost theme-toggle" type="button">Switch To Light</button>
+          <div id="status" class="status-pill" role="status" aria-live="polite" aria-atomic="true">Ready.</div>
+        </div>
+      </header>
+
+      <section class="kpi-grid">
+        <article class="kpi-card panel">
+          <p>Active Tickers</p>
+          <strong id="kpiTickers">-</strong>
+        </article>
+        <article class="kpi-card panel">
+          <p>Best Portfolio Strategy</p>
+          <strong id="kpiBestStrategy">-</strong>
+        </article>
+        <article class="kpi-card panel">
+          <p>Portfolio Return</p>
+          <strong id="kpiPortfolioReturn">-</strong>
+        </article>
+      </section>
+
+      <section class="insight-grid">
+        <article class="insight-card panel">
+          <p class="insight-label">Leader</p>
+          <strong id="insightLeader">-</strong>
+          <span id="insightLeaderMeta" class="insight-meta">Awaiting run</span>
+        </article>
+        <article class="insight-card panel">
+          <p class="insight-label">Risk Hotspot</p>
+          <strong id="insightRisk">-</strong>
+          <span id="insightRiskMeta" class="insight-meta">Awaiting run</span>
+        </article>
+        <article class="insight-card panel">
+          <p class="insight-label">Portfolio Alpha</p>
+          <strong id="insightAlpha">-</strong>
+          <span id="insightAlphaMeta" class="insight-meta">Versus benchmark</span>
+        </article>
+      </section>
+
+      <section class="panel quotes">
+        <h3>Live Quotes</h3>
+        <div id="quote-cards" class="quote-cards"></div>
+      </section>
+
+      <section class="chart-grid">
+        <section class="panel chart-panel">
+          <div class="chart-head">
+            <h3 id="priceChartTitle">Relative Performance vs SPY (Benchmark=100)</h3>
+            <div class="chart-controls">
+              <label class="chart-control">
+                <span>Mode</span>
+                <select id="priceCompareMode">
+                  <option value="vsBase" selected>Vs Benchmark</option>
+                  <option value="normalized">Normalized</option>
+                  <option value="cumulativeReturn">Cum Return %</option>
+                  <option value="rollingReturn63">Rolling 63D %</option>
+                  <option value="rollingVol21">Rolling 21D Vol %</option>
+                </select>
+              </label>
+              <label class="chart-control">
+                <span>Scale</span>
+                <select id="priceScale">
+                  <option value="linear" selected>Linear</option>
+                  <option value="log">Log</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <canvas id="priceChart"></canvas>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="chart-head">
+            <h3 id="strategyChartTitle">Portfolio Strategy Equity Curves</h3>
+            <div class="chart-controls">
+              <label class="chart-control">
+                <span>View</span>
+                <select id="strategyViewMode">
+                  <option value="equity" selected>Equity</option>
+                  <option value="drawdown">Drawdown %</option>
+                  <option value="edgeVsBuyHold">Edge vs BuyHold %</option>
+                  <option value="excessBenchmark">Excess vs Benchmark %</option>
+                </select>
+              </label>
+              <label class="chart-control">
+                <span>Focus</span>
+                <select id="strategyFocus">
+                  <option value="all" selected>All</option>
+                  <option value="buyHold">Buy & Hold</option>
+                  <option value="sma">SMA</option>
+                  <option value="rsi">RSI</option>
+                </select>
+              </label>
+              <label class="chart-control chart-check">
+                <input id="showBenchmarkOverlay" type="checkbox" checked />
+                <span>Benchmark</span>
+              </label>
+            </div>
+          </div>
+          <canvas id="strategyChart"></canvas>
+        </section>
+      </section>
+
+      <section id="mixSection" class="panel chart-panel" hidden>
+        <h3>Portfolio Mix A vs Portfolio Mix B</h3>
+        <div class="mix-kpis">
+          <div class="mix-kpi">
+            <span>A Total Return</span>
+            <strong id="mixAReturn">-</strong>
+          </div>
+          <div class="mix-kpi">
+            <span>B Total Return</span>
+            <strong id="mixBReturn">-</strong>
+          </div>
+          <div class="mix-kpi">
+            <span>A-B Spread</span>
+            <strong id="mixSpread">-</strong>
+          </div>
+        </div>
+        <canvas id="mixChart"></canvas>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="section-head">
+          <h3>Ticker Strategy Metrics</h3>
+          <div class="export-actions">
+            <button id="exportPricesBtn" class="btn-ghost" type="button">Export Aligned Prices CSV</button>
+            <button id="exportTickerMetricsBtn" class="btn-ghost" type="button">Export Ticker Metrics CSV</button>
+            <button id="exportPortfolioBtn" class="btn-ghost" type="button">Export Portfolio CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort-table="results" data-sort-key="ticker" aria-sort="none" tabindex="0">Ticker</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="buyHold" aria-sort="none" tabindex="0">BuyHold Ret</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="sma" aria-sort="none" tabindex="0">SMA Ret</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="rsi" aria-sort="none" tabindex="0">RSI Ret</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="best" aria-sort="none" tabindex="0">Best</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="bestSharpe" aria-sort="none" tabindex="0">Best Sharpe</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="bestMaxDd" aria-sort="none" tabindex="0">Best MaxDD</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="bestTrades" aria-sort="none" tabindex="0">Best Trades</th>
+                <th class="sortable" data-sort-table="results" data-sort-key="bestTurnover" aria-sort="none" tabindex="0">Best Turnover</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel table-panel">
+        <h3>Portfolio Strategy Metrics</h3>
+        <div class="table-wrap">
+          <table id="portfolioTable">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="strategy" aria-sort="none" tabindex="0">Strategy</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="totalReturn" aria-sort="none" tabindex="0">Total Return</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="sharpe" aria-sort="none" tabindex="0">Sharpe</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="vol" aria-sort="none" tabindex="0">Volatility</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="maxDrawdown" aria-sort="none" tabindex="0">Max Drawdown</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="trades" aria-sort="none" tabindex="0">Trades</th>
+                <th class="sortable" data-sort-table="portfolio" data-sort-key="turnover" aria-sort="none" tabindex="0">Turnover</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

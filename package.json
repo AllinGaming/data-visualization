@@ -1,0 +1,18 @@
+{
+  "name": "stock-strategy-compare",
+  "version": "1.0.0",
+  "description": "Multi-ticker stock comparison dashboard with strategy backtests.",
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
