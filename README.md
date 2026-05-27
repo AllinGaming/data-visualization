@@ -1,4 +1,4 @@
-# Stock Strategy Lab
+# Stock Strategy Lab (WON'T RUN ON PAGES - ONLY USED FOR UI PREVIEW)
 
 Stock Strategy Lab is an enterprise-style market analytics dashboard for comparing multiple stock tickers, benchmarking performance, and evaluating simple trading strategies.
 
